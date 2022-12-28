@@ -1,7 +1,6 @@
 package merkletree
 
 import (
-	"crypto/sha256"
 	"strconv"
 	"testing"
 
@@ -80,8 +79,8 @@ func Test_LargestPowerOf2SmallerThan(t *testing.T) {
    d0 d1   d2 d3  d4 d5
 */
 
-func makeEntries() (D [][]byte) {
-	for i := 0; i < 7; i++ {
+func makeEntries(limit int) (D [][]byte) {
+	for i := 0; i < limit; i++ {
 		v := "d" + strconv.FormatInt(int64(i), 10)
 		D = append(D, []byte(v))
 	}
@@ -89,7 +88,7 @@ func makeEntries() (D [][]byte) {
 }
 
 func TestPath(t *testing.T) {
-	D := makeEntries()
+	D := makeEntries(7)
 	// The audit path for d0 is [b, h, l].
 	path := Path(0, D)
 	assert.Len(t, path, 3)
@@ -137,7 +136,7 @@ The same tree, built incrementally in four steps:
 */
 
 func TestProof(t *testing.T) {
-	D := makeEntries()
+	D := makeEntries(7)
 
 	// The consistency proof between hash0 and hash is PROOF(3, D[7]) = [c,
 	// d, g, l].  c, g are used to verify hash0, and d, l are additionally
@@ -159,14 +158,10 @@ func TestProof(t *testing.T) {
 	assert.Len(t, path, 3)
 }
 
-func leafHash(input []byte) [sha256.Size]byte {
-	e := []byte{LeafPrefix}
-	e = append(e, input...)
-	return sha256.Sum256(e)
-}
-
-func nodeHash(input []byte) [sha256.Size]byte {
-	e := []byte{NodePrefix}
-	e = append(e, input...)
-	return sha256.Sum256(e)
+func makeRangeEntries(start, end int) (D [][]byte) {
+	for i := start; i < end; i++ {
+		v := "d" + strconv.FormatInt(int64(i), 10)
+		D = append(D, []byte(v))
+	}
+	return
 }
