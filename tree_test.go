@@ -1,8 +1,6 @@
 package merkletree
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -113,9 +111,26 @@ func TestMTHOfRange(t *testing.T) {
 
 }
 
-func printPath(path [][sha256.Size]byte) {
-	for _, p := range path {
-		fmt.Printf("%.2x-->", p)
-	}
-	fmt.Println()
+func TestConsistencyProof(t *testing.T) {
+	D := makeEntries(7)
+	tree := New(D)
+
+	// The consistency proof between hash0 and hash is PROOF(3, D[7]) = [c,
+	// d, g, l].  c, g are used to verify hash0, and d, l are additionally
+	// used to show hash is consistent with hash0.
+	path := tree.ConsitencyProof(3, 7)
+	assert.Len(t, path, 4)
+
+	// assert.ElementsMatch(t, path, [][sha256.Size]byte{leafHash(D[2]), leafHash(D[3]), nodeHash([]byte{'g'}), nodeHash([]byte{'l'})})
+
+	// The consistency proof between hash1 and hash is PROOF(4, D[7]) = [l].
+	// hash can be verified using hash1=k and l.
+	path = tree.ConsitencyProof(4, 7)
+	assert.Len(t, path, 1)
+
+	// The consistency proof between hash2 and hash is PROOF(6, D[7]) = [i,
+	// j, k].  k, i are used to verify hash2, and j is additionally used to
+	// show hash is consistent with hash2.
+	path = tree.ConsitencyProof(6, 7)
+	assert.Len(t, path, 3)
 }

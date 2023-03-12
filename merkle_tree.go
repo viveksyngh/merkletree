@@ -1,6 +1,8 @@
 package merkletree
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+)
 
 // Prefixes for leaves and nodes
 const (

@@ -143,7 +143,6 @@ func TestProof(t *testing.T) {
 	// used to show hash is consistent with hash0.
 	path := Proof(3, D)
 	assert.Len(t, path, 4)
-
 	// assert.ElementsMatch(t, path, [][sha256.Size]byte{leafHash(D[2]), leafHash(D[3]), nodeHash([]byte{'g'}), nodeHash([]byte{'l'})})
 
 	// The consistency proof between hash1 and hash is PROOF(4, D[7]) = [l].

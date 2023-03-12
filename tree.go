@@ -75,7 +75,7 @@ func (m *MerkleHashTree) buildTree(entries [][sha256.Size]byte, level int) [sha2
 }
 
 // TODO: avoid building the entire tree and build only the part of the tree which needs to changed.
-// rebuildTree rebuilds the root hash of a merkle hash tree
+// rebuildTree rebuilds the root hash of an exitsing merkle hash tree
 func (m *MerkleHashTree) rebuildTree(entries [][sha256.Size]byte, level int, levelIndexMap map[int]int) [sha256.Size]byte {
 	n := uint64(len(entries))
 	if n == 0 {
@@ -113,7 +113,6 @@ func (m *MerkleHashTree) Print() {
 		tab = strings.Repeat("  ", (1<<(i+1))-1)
 		for _, v := range m.tree[i] {
 			fmt.Printf("%.2x%s", v, tab)
-			// fmt.Printf("%s%s", v, tab)
 		}
 		fmt.Println()
 	}
@@ -139,6 +138,7 @@ func (m *MerkleHashTree) MerkleRoot() [sha256.Size]byte {
 	return m.tree[len(m.tree)-1][0]
 }
 
+// InclusionProof returns inclusion proof for a merkle tree hash node
 func (mth *MerkleHashTree) InclusionProof(e []byte) [][sha256.Size]byte {
 	hash := leafHash(e)
 	m := IndexOf(mth.tree[0], hash)
@@ -159,6 +159,7 @@ func (mth *MerkleHashTree) mthOfRange(start, end int) [sha256.Size]byte {
 	return mth.tree[levels-1][start/maxSize]
 }
 
+// AduitPath returns audit path of a merkle hash tree
 func (mth *MerkleHashTree) AduitPath(m int, start, end int) [][sha256.Size]byte {
 	n := end - start + 1
 	path := make([][sha256.Size]byte, 0)
@@ -188,6 +189,7 @@ func (mth *MerkleHashTree) AduitPath(m int, start, end int) [][sha256.Size]byte 
 	return path
 }
 
+// IndexOf returns index of a byte in list of bytes
 func IndexOf(entries [][sha256.Size]byte, e [sha256.Size]byte) int {
 	for i, b := range entries {
 		if bytes.Compare(b[:], e[:]) == 0 {
@@ -196,4 +198,48 @@ func IndexOf(entries [][sha256.Size]byte, e [sha256.Size]byte) int {
 	}
 
 	return -1
+}
+
+func printPath(path [][sha256.Size]byte) {
+	for _, p := range path {
+		fmt.Printf("%.2x-->", p)
+	}
+	fmt.Println()
+}
+
+// ConsitencyProof returns the Merkle Consitency Proof for a Merkle Tree
+// Hash of first n leaves and previously advertised hash of the first m levaes, m <= n.
+func (mth *MerkleHashTree) ConsitencyProof(m, n uint64) [][sha256.Size]byte {
+	l := uint64(len(mth.tree[0]))
+
+	if m < 0 || m > n || m > l || n > l {
+		return nil
+	}
+	return mth.subProof(m, 0, int(n-1), true)
+}
+
+func (mth *MerkleHashTree) subProof(m uint64, start, end int, isKnown bool) [][sha256.Size]byte {
+	path := make([][sha256.Size]byte, 0)
+	n := uint64(end - start + 1)
+
+	if m == n && isKnown {
+		return path
+	}
+
+	if m == n && !isKnown {
+		path = append(path, mth.mthOfRange(start, end))
+		return path
+	}
+
+	if m < n {
+		k := largestPowerOf2SmallerThan(n)
+		if m <= k {
+			path = append(path, mth.subProof(m, start, start+int(k-1), isKnown)...)
+			path = append(path, mth.mthOfRange(start+int(k), end))
+		} else {
+			path = append(path, mth.subProof(m-k, start+int(k), end, false)...)
+			path = append(path, mth.mthOfRange(start, start+int(k-1)))
+		}
+	}
+	return path
 }
