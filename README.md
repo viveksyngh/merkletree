@@ -5,7 +5,8 @@ Merkle Hash Tree implementation in Golang described in [Certificate Transparency
 
 ## TODO
 
-* Add API for consistency proof
+[x] Add API for consistency proof
+[ ] Add VerifyConsistencyProof and VerifyInclusionProof API
 
 
 ## Inspired From 
